@@ -89,9 +89,10 @@ class FastImageViewConverter {
         final Priority priority = FastImageViewConverter.getPriority(source);
         // Get cache control method.
         final FastImageCacheControl cacheControl = FastImageViewConverter.getCacheControl(source);
-        DiskCacheStrategy diskCacheStrategy = DiskCacheStrategy.AUTOMATIC;
+        //DiskCacheStrategy diskCacheStrategy = DiskCacheStrategy.AUTOMATIC;
+        DiskCacheStrategy diskCacheStrategy = DiskCacheStrategy.NONE;
         Boolean onlyFromCache = false;
-        Boolean skipMemoryCache = false;
+        Boolean skipMemoryCache = true;
         switch (cacheControl) {
             case WEB:
                 // If using none then OkHttp integration should be used for caching.
@@ -112,7 +113,7 @@ class FastImageViewConverter {
             .skipMemoryCache(skipMemoryCache)
             .priority(priority)
             .placeholder(TRANSPARENT_DRAWABLE);
-        
+
         if (imageSource.isResource()) {
             // Every local resource (drawable) in Android has its own unique numeric id, which are
             // generated at build time. Although these ids are unique, they are not guaranteed unique
