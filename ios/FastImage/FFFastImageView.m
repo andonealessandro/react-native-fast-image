@@ -141,46 +141,71 @@
             return;
         }
         
-        // Set headers.
-        [_source.headers enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString* header, BOOL *stop) {
-            [[SDWebImageDownloader sharedDownloader] setValue:header forHTTPHeaderField:key];
-        }];
-        
-        // Set priority.
-        SDWebImageOptions options = SDWebImageRetryFailed;
-        switch (_source.priority) {
-            case FFFPriorityLow:
-                options |= SDWebImageLowPriority;
-                break;
-            case FFFPriorityNormal:
-                // Priority is normal by default.
-                break;
-            case FFFPriorityHigh:
-                options |= SDWebImageHighPriority;
-                break;
+        if (url && [url hasPrefix:@"http"]) {           
+            // Set headers.
+            [_source.headers enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString* header, BOOL *stop) {
+                [[SDWebImageDownloader sharedDownloader] setValue:header forHTTPHeaderField:key];
+            }];
+            
+            // Set priority.
+            SDWebImageOptions options = SDWebImageRetryFailed;
+            switch (_source.priority) {
+                case FFFPriorityLow:
+                    options |= SDWebImageLowPriority;
+                    break;
+                case FFFPriorityNormal:
+                    // Priority is normal by default.
+                    break;
+                case FFFPriorityHigh:
+                    options |= SDWebImageHighPriority;
+                    break;
+            }
+            
+            switch (_source.cacheControl) {
+                case FFFCacheControlWeb:
+                    options |= SDWebImageRefreshCached;
+                    break;
+                case FFFCacheControlCacheOnly:
+                    options |= SDWebImageFromCacheOnly;
+                    break;
+                case FFFCacheControlImmutable:
+                    break;
+            }
+            
+            if (self.onFastImageLoadStart) {
+                self.onFastImageLoadStart(@{});
+                self.hasSentOnLoadStart = YES;
+            } {
+                self.hasSentOnLoadStart = NO;
+            }
+            self.hasCompleted = NO;
+            self.hasErrored = NO;
+            
+            [self downloadImage:_source options:options];
+        } else {
+            if (self.onFastImageLoadStart) {
+                self.onFastImageLoadStart(@{});
+                self.hasSentOnLoadStart = YES;
+            } {
+                self.hasSentOnLoadStart = NO;
+            }
+            UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:_source.url]];
+            [self setImage:image];
+            if (self.onFastImageProgress) {
+                self.onFastImageProgress(@{
+                                           @"loaded": @(1),
+                                           @"total": @(1)
+                                           });
+            }
+            self.hasCompleted = YES;
+            [self sendOnLoad:image];
+            
+            if (self.onFastImageLoadEnd) {
+                self.onFastImageLoadEnd(@{});
+            }
+            return;
         }
         
-        switch (_source.cacheControl) {
-            case FFFCacheControlWeb:
-                options |= SDWebImageRefreshCached;
-                break;
-            case FFFCacheControlCacheOnly:
-                options |= SDWebImageFromCacheOnly;
-                break;
-            case FFFCacheControlImmutable:
-                break;
-        }
-        
-        if (self.onFastImageLoadStart) {
-            self.onFastImageLoadStart(@{});
-            self.hasSentOnLoadStart = YES;
-        } {
-            self.hasSentOnLoadStart = NO;
-        }
-        self.hasCompleted = NO;
-        self.hasErrored = NO;
-        
-        [self downloadImage:_source options:options];
     }
 }
 
